@@ -10,11 +10,14 @@ With GraphKer you can have the most recent update of cyber-security vulnerabilit
 
 # **Prerequisites**
 
-_3 Steps to run GraphKer Tool_
+_3 + 1 Steps to run GraphKer Tool_
 
-1) Download and Install Neo4j Desktop
+**1) Download and Install Neo4j Desktop**
    - Windows Users: https://neo4j.com/download/
-     - Create an account to get the license (totally free), download and install Neo4j Desktop. Useful Video: https://tinyurl.com/yjjbn8jx
+     
+     Create an account to get the license (totally free), download and install Neo4j Desktop.
+     
+     Useful Video: https://tinyurl.com/yjjbn8jx
    - Linux Users:
    
       ```
@@ -40,20 +43,35 @@ _3 Steps to run GraphKer Tool_
      ``` 
      Useful Video: https://tinyurl.com/vvpjf3dr
      
-2) Create and Configure the Database
-3) Install requirements.txt
-   - **GraphKer Uses: xmltodict, neo4j, requests, beautifulsoup4**
+**2) Create and Configure the Database**
+   - Create Database:
+     - Windows Users:
+     - Linux Users:
+   - Configure Database:
+     - Install APOC Plugin:
+       - Windows Users:
+       - Linux Users:
+     - Configure Database Settings File:
+       - Windows Users:
+       - Linux Users:
+       
+**3) Install requirements.txt**
+   - GraphKer Uses: xmltodict, neo4j, requests, beautifulsoup4
    - ``` pip install -r requirements.txt ```    
 
+**4) Install Applications Created for Neo4j**
+   - There are several applications created especially for Neo4j that you can use for better experience and work.
 
 # 
 --Search, Export Data and Analytics, Enrich your Skills--
 
 **Created by Adamantios - Marios Berzovitis, Cybersecurity Expert MSc, BSc**
 
-_Diploma Research - MSc @ Distributed Systems, Security and Emerging Information Technologies | University Of Piraeus_
+_Diploma Research - MSc @ Distributed Systems, Security and Emerging Information Technologies | University Of Piraeus --> https://www.cs.unipi.gr/distributed/_
 
-_Co-Working with Cyber Security Research Lab | University Of Piraeus_
+_Co-Working with Cyber Security Research Lab | University Of Piraeus --> https://seclab.cs.unipi.gr/_
+
+Facebook: https://www.facebook.com/GraphKerTool/
 
 LinkedIn: https://tinyurl.com/p57w4ntu
 
