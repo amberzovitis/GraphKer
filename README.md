@@ -42,9 +42,8 @@ _3 Steps to run GraphKer Tool_
      
 2) Create and Configure the Database
 3) Install requirements.txt
-   - **GraphKer Uses: xmltodict, neo4j, requests, beautifulsoup4**  
-
-
+   - **GraphKer Uses: xmltodict, neo4j, requests, beautifulsoup4**
+   - ``` pip install -r requirements.txt ```    
 
 
 # 
