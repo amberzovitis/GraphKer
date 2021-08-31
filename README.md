@@ -12,7 +12,7 @@ With GraphKer you can have the most recent update of cyber-security vulnerabilit
 
 _3 + 1 Steps to run GraphKer Tool_
 
-**1) Download and Install Neo4j Desktop**
+### **1) Download and Install Neo4j Desktop**
    - Windows Users: https://neo4j.com/download/
      
      Create an account to get the license (totally free), download and install Neo4j Desktop.
@@ -43,24 +43,46 @@ _3 + 1 Steps to run GraphKer Tool_
      ``` 
      Useful Video: https://tinyurl.com/vvpjf3dr
      
-**2) Create and Configure the Database**
+### **2) Create and Configure the Database**
    - Create Database:
      - Windows Users:
+       
+       You can create databases in whatever version you want (latest version preferable) through GUI or Neo4j Terminal.
+       - Create a new database in GUI: Just click the (+), set DB Name, Username and Password. Useful Tutorial: https://www.sqlshack.com/getting-started-with-the-neo4j-graph-database/
+       - Through Neo4j Shell: https://neo4j.com/docs/cypher-manual/current/databases/
      - Linux Users:
    - Configure Database:
      - Install APOC Plugin:
-       - Windows Users:
+       - Windows Users: In Neo4j Desktop Main Page --> Choose your Database --> Click Plugins --> APOC --> Install
        - Linux Users:
+         - Download APOC jar File: https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases (*-*-all.jar file)
+         - Place it in Plugins Folder --> check every folder path in Neo4j: https://neo4j.com/docs/operations-manual/current/configuration/file-locations/
+         - Modify the Database Configuration File to approve apoc procedures.
+           
+           Uncomment: ``` dbms.directories.plugins=plugins ```
+           
+           Uncomment and Modify:
+           ```
+            dbms.security.procedures.unrestricted=apoc.*
+            dbms.security.procedures.whitelist=apoc.*,apoc.coll.*,apoc.load.*
+            #loads unrestricted and white-listed procedures/plugins to the server
+           ```
+           
+           Restart Neo4j: ```systemctl restart neo4j```
      - Configure Database Settings File:
        - Windows Users:
        - Linux Users:
        
-**3) Install requirements.txt**
+### **3) Install requirements.txt**
    - GraphKer Uses: xmltodict, neo4j, requests, beautifulsoup4
    - ``` pip install -r requirements.txt ```    
 
-**4) Install Applications Created for Neo4j**
+### **4) Install Applications Created for Neo4j**
    - There are several applications created especially for Neo4j that you can use for better experience and work.
+
+#
+
+You can access the CVE and CPE Datasets in National Vulnerability Database by NIST (https://nvd.nist.gov/vuln/data-feeds), CWE Dataset in MITRE (https://cwe.mitre.org/data/downloads.html) and CAPEC Dataset in MITRE (https://capec.mitre.org/data/downloads.html).
 
 # 
 --Search, Export Data and Analytics, Enrich your Skills--
