@@ -120,6 +120,8 @@ _For Neo4j Import Folder check the link above with File Locations._
 
 Estimated RunTime: **6-15 Minutes**. Depends on hardware.
 
+_**At least 8GB in your hard drive.**_
+
 #
 
 You can access the CVE and CPE Datasets in National Vulnerability Database by NIST (https://nvd.nist.gov/vuln/data-feeds), CWE Dataset in MITRE (https://cwe.mitre.org/data/downloads.html) and CAPEC Dataset in MITRE (https://capec.mitre.org/data/downloads.html).
