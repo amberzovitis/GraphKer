@@ -2,7 +2,7 @@
 Open Source Tool - Cybersecurity Graph Database in Neo4j
 
 
-**|G|r|a|p|h|K|e|r**
+**|G|r|a|p|h|K|e|r|**
 
  { open source tool for a cybersecurity graph database in neo4j }
 
