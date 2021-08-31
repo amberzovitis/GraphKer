@@ -70,8 +70,26 @@ _3 + 1 Steps to run GraphKer Tool_
            
            Restart Neo4j: ```systemctl restart neo4j```
      - Configure Database Settings File:
-       - Windows Users:
-       - Linux Users:
+       - Windows Users: In Neo4j Desktop Main Page --> Choose your Database --> ... (Three Dots) --> Settings --> Go to last line and set the commands below --> Apply and Restart the Database
+        
+         ```
+         apoc.export.file.enabled=true
+         apoc.import.file.enabled=true
+         apoc.import.file.user_neo4j_config=false
+         cypher.lenient_create_relationship = true
+         ```
+         
+       - Linux Users: Same as above, in the neo4j.conf file --> check every folder path in Neo4j: https://neo4j.com/docs/operations-manual/current/configuration/file-locations/
+
+     - Configure Memory Usage:
+       
+       In Neo4j Configuration File (neo4j.conf):
+       For 16GB RAM you can use 8G + 4G for heap. For 8GB RAM you can use 4G + 2G etc.
+       ```
+       dbms.memory.heap.initial_size=4G
+       dbms.memory.heap.max_size=8G
+       dbms.memory.pagecache.size=4G
+       ```
        
 ### **3) Install requirements.txt**
    - GraphKer Uses: xmltodict, neo4j, requests, beautifulsoup4
@@ -79,6 +97,26 @@ _3 + 1 Steps to run GraphKer Tool_
 
 ### **4) Install Applications Created for Neo4j**
    - There are several applications created especially for Neo4j that you can use for better experience and work.
+     - Neo4j Bloom: Application for better graph presentations. Free and Easy to use.
+     - Graphlytic: Third-Party App, better graph presentations, but most important auto-analytics and statistics. Free and Paid Editions. We can do the most locally with free edition. Learn More: https://graphlytic.biz/
+     - Neo4j Database Analyzer: Third-Party App, Free, provides great analysis tools for our Data and our Schema. Learn More: https://community.neo4j.com/t/introducing-the-neo4j-database-analyzer/6197
+
+# **Run GraphKer**
+
+```
+// Default
+python main.py -u BOLT_URL -n USERNAME -p PASSWORD -d IMPORT_PATH
+// Run and Open Neo4j Browser
+python main.py -u BOLT_URL -n USERNAME -p PASSWORD -d IMPORT_PATH -b y
+// Run and Open Graphlytic App
+python main.py -u BOLT_URL -n USERNAME -p PASSWORD -d IMPORT_PATH -g y
+``` 
+
+_Default Bolt URL for Neo4j: bolt://localhost:7687_
+
+_Default Username in Neo4j Databases: neo4j_
+
+_For Neo4j Import Folder check the link above with File Locations._
 
 #
 
