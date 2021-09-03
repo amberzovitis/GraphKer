@@ -50,7 +50,7 @@ _3 + 1 Steps to run GraphKer Tool_
        You can create databases in whatever version you want (latest version preferable) through GUI or Neo4j Terminal.
        - Create a new database in GUI: Just click the (+), set DB Name, Username and Password. Useful Tutorial: https://www.sqlshack.com/getting-started-with-the-neo4j-graph-database/
        - Through Neo4j Shell: https://neo4j.com/docs/cypher-manual/current/databases/
-     - Linux Users:
+     - Linux Users: When you start neo4j through systemctl, type ``` cypher-shell ```, then ``` create database NAME; ```. Now you have to set this database, as default so when you start neo4j you start automatically this database. Go to /etc/neo4j/neo4j.conf and uncomment ``` dbms.default_database=neo4j ``` and change it with your new database name. Restart neo4j service and you are ready. 
    - Configure Database:
      - Install APOC Plugin:
        - Windows Users: In Neo4j Desktop Main Page --> Choose your Database --> Click Plugins --> APOC --> Install
@@ -110,6 +110,8 @@ python main.py -u BOLT_URL -n USERNAME -p PASSWORD -d IMPORT_PATH
 python main.py -u BOLT_URL -n USERNAME -p PASSWORD -d IMPORT_PATH -b y
 // Run and Open Graphlytic App
 python main.py -u BOLT_URL -n USERNAME -p PASSWORD -d IMPORT_PATH -g y
+// Default Run Example in Ubuntu
+sudo python3 main.py -u BOLT_URL -n USERNAME -p PASSWORD -d /var/lib/neo4j/import/
 ``` 
 
 _Default Bolt URL for Neo4j: bolt://localhost:7687_
