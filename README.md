@@ -125,6 +125,9 @@ Estimated RunTime: **6-15 Minutes**. Depends on hardware.
 _**At least 8GB in your hard drive.**_
 
 #
+You can check out an existing example of the graph database that GraphKer creates. Just download the dump file from repo: https://github.com/amberzovitis/GraphKer-DBMS-Dump and import it to an existing or new graph database in Neo4j. This file consists of CVEs from 2021 (with related CPEs) and all CWEs and CAPECs.
+
+#
 
 You can access the CVE and CPE Datasets in National Vulnerability Database by NIST (https://nvd.nist.gov/vuln/data-feeds), CWE Dataset in MITRE (https://cwe.mitre.org/data/downloads.html) and CAPEC Dataset in MITRE (https://capec.mitre.org/data/downloads.html).
 
