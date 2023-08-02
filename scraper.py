@@ -42,7 +42,7 @@ def download_files_cve_cpe(import_path):
                 print('---------')
                 z.close()
                 current_os = platform.system()
-                if current_os == "Linux":
+                if (current_os == "Linux" or current_os == "Darwin"):
                     file_to_delete = f'{extract_dir}' + f'/{zip_filename}'
                 elif current_os == "Windows":
                     file_to_delete = f'{extract_dir}' + f'\\{zip_filename}'
@@ -90,7 +90,7 @@ def download_files_cwe(import_path):
             print(zip_filename + ' unzipped successfully')
             z.close()
             current_os = platform.system()
-            if current_os == "Linux":
+            if (current_os == "Linux" or current_os == "Darwin"):
                 file_to_delete = f'{extract_dir}' + f'/{zip_filename}'
             elif current_os == "Windows":
                 file_to_delete = f'{extract_dir}' + f'\\{zip_filename}'

@@ -245,7 +245,7 @@ def replace_files_cypher_script(files):
 
     current_path = os.getcwd()
     current_os = platform.system()
-    if current_os == "Linux":
+    if (current_os == "Linux" or current_os == "Darwin"):
         current_path += "/CypherScripts/"
     elif current_os == "Windows":
         current_path += "\CypherScripts\\"
@@ -292,7 +292,7 @@ def replace_files_cypher_script(files):
 def copy_files_cypher_script():
     current_path = os.getcwd()
     current_os = platform.system()
-    if current_os == "Linux":
+    if (current_os == "Linux" or current_os == "Darwin"):
         current_path += "/CypherScripts/"
     elif current_os == "Windows":
         current_path += "\CypherScripts\\"
@@ -311,7 +311,7 @@ def clear_directory():
 def set_import_path(directory):
     global import_path
     current_os = platform.system()
-    if current_os == "Linux":
+    if (current_os == "Linux" or current_os == "Darwin"):
         import_path = directory
     elif current_os == "Windows":
         import_path = directory.replace("\\", "\\\\") + "\\\\"
