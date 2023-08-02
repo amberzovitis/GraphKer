@@ -3,7 +3,9 @@ import requests
 import zipfile
 from bs4 import BeautifulSoup
 import platform
+from circuitbreaker import circuit
 
+MAX_RETRIES = 5
 
 def download_files_cve_cpe(import_path):
     url = 'https://nvd.nist.gov/vuln/data-feeds'
@@ -21,37 +23,28 @@ def download_files_cve_cpe(import_path):
 
     # Download and Unzip the files
     print('\nUpdating the Database with the latest CVE Files...')
-    tries = 0
     for zip_file in zip_files:
         full_url = root + zip_file
         zip_filename = os.path.basename(zip_file)
-        print(zip_filename)
         dl_path = os.path.join(download_folder, zip_filename)
         # 5 attempts to download and unzip the file correctly
         extract_dir = import_path
-        while tries < 5:
-            r = requests.get(full_url)
-            dl_path = os.path.join(download_folder, zip_filename)
-            with open(dl_path, 'wb') as z_file:
-                z_file.write(r.content)
-            # unzip
-            try:
-                z = zipfile.ZipFile(dl_path)
-                z.extractall(os.path.join(download_folder, extract_dir))
-                print(zip_filename + ' unzipped successfully')
-                print('---------')
-                z.close()
-                current_os = platform.system()
-                if (current_os == "Linux" or current_os == "Darwin"):
-                    file_to_delete = f'{extract_dir}' + f'/{zip_filename}'
-                elif current_os == "Windows":
-                    file_to_delete = f'{extract_dir}' + f'\\{zip_filename}'
-                os.remove(file_to_delete)
-                break
-            except zipfile.BadZipfile:
-                # Bad download, try again
-                pass
-            tries += 1
+        download_file_to_path(full_url, download_folder, zip_filename)
+        # unzip
+        try:
+            z = zipfile.ZipFile(dl_path)
+            z.extractall(os.path.join(download_folder, extract_dir))
+            print(zip_filename + ' unzipped successfully')
+            print('---------')
+            z.close()
+            current_os = platform.system()
+            if (current_os == "Linux" or current_os == "Darwin"):
+                file_to_delete = f'{extract_dir}' + f'/{zip_filename}'
+            elif current_os == "Windows":
+                file_to_delete = f'{extract_dir}' + f'\\{zip_filename}'
+            os.remove(file_to_delete)
+        except zipfile.BadZipfile as e:
+            print("Error while unzipping data" + e)
 
 
 def download_files_cwe(import_path):
@@ -71,35 +64,27 @@ def download_files_cwe(import_path):
 
     # Download and Unzip the files
     print('\nUpdating the Database with the latest CWE Files...')
-    tries = 0
     full_url = root + zip_file
     zip_filename = os.path.basename(zip_file)
     print(zip_filename)
     dl_path = os.path.join(download_folder, zip_filename)
     # 5 attempts to download and unzip the file correctly
-    while tries < 5:
-        r = requests.get(full_url)
-        dl_path = os.path.join(download_folder, zip_filename)
-        with open(dl_path, 'wb') as z_file:
-            z_file.write(r.content)
-        # unzip
-        extract_dir = import_path
-        try:
-            z = zipfile.ZipFile(dl_path)
-            z.extractall(os.path.join(download_folder, extract_dir))
-            print(zip_filename + ' unzipped successfully')
-            z.close()
-            current_os = platform.system()
-            if (current_os == "Linux" or current_os == "Darwin"):
-                file_to_delete = f'{extract_dir}' + f'/{zip_filename}'
-            elif current_os == "Windows":
-                file_to_delete = f'{extract_dir}' + f'\\{zip_filename}'
-            os.remove(file_to_delete)
-            break
-        except zipfile.BadZipfile:
-            # Bad download, try again
-            pass
-        tries += 1
+    download_file_to_path(full_url, download_folder, zip_filename)
+    # unzip
+    extract_dir = import_path
+    try:
+        z = zipfile.ZipFile(dl_path)
+        z.extractall(os.path.join(download_folder, extract_dir))
+        print(zip_filename + ' unzipped successfully')
+        z.close()
+        current_os = platform.system()
+        if (current_os == "Linux" or current_os == "Darwin"):
+            file_to_delete = f'{extract_dir}' + f'/{zip_filename}'
+        elif current_os == "Windows":
+            file_to_delete = f'{extract_dir}' + f'\\{zip_filename}'
+        os.remove(file_to_delete)
+    except zipfile.BadZipfile:
+        print('\nUpdating the Database with the latest CWE Files...')
 
 
 def download_files_capec(import_path):
@@ -119,21 +104,39 @@ def download_files_capec(import_path):
 
     # Download xml file
     print('\nUpdating the Database with the latest CAPEC Files...')
-    tries = 0
     full_url = root + xml_file
     xml_filename = os.path.basename(xml_file)
     print(xml_filename)
-    dl_path = os.path.join(download_folder, xml_filename)
-    # 5 attempts to download the file correctly
-    while tries < 5:
-        r = requests.get(full_url)
-        dl_path = os.path.join(download_folder, xml_filename)
-        with open(dl_path, 'wb') as x_file:
-            x_file.write(r.content)
-        tries += 1
+    download_file_to_path(full_url, download_folder, xml_filename)
 
 
 def download_datasets(import_path):
     download_files_cve_cpe(import_path)
     download_files_cwe(import_path)
     download_files_capec(import_path)
+
+# Define the function that makes the HTTP request with retry
+def make_http_request_with_retry(url, retries=0):
+    try:
+        # Call the function that makes the HTTP request, protected by the circuit breaker
+        return download_file_to_path(url)
+    except circuit.BreakerOpenError:
+        if retries < MAX_RETRIES:
+            print(f"Circuit is open. Retrying... Attempt {retries + 1}")
+            return make_http_request_with_retry(url, retries=retries + 1)
+        else:
+            raise RuntimeError("Circuit is open. Max retries reached.")
+    except Exception as e:
+        if retries < MAX_RETRIES:
+            print(f"Error occurred: {e}. Retrying... Attempt {retries + 1}")
+            return make_http_request_with_retry(url, retries=retries + 1)
+        else:
+            raise RuntimeError("Max retries reached. Last error: {}".format(e))
+
+# Define the function that makes the HTTP request
+@circuit(failure_threshold=10)
+def download_file_to_path(url, download_path, file_name):
+    r = requests.get(url)
+    dl_path = os.path.join(download_path, file_name)
+    with open(dl_path, 'wb') as file:
+        file.write(r.content)
