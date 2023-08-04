@@ -1,6 +1,4 @@
 import argparse
-import json
-import xmltodict
 import os
 import webbrowser
 from neo4j import GraphDatabase
@@ -8,6 +6,7 @@ import scraper
 import fnmatch
 import platform
 import shutil
+from pathlib import Path
 
 
 class App:
@@ -115,21 +114,21 @@ class App:
 
 # Define which Dataset and Cypher files will be imported on CPE Insertion
 def files_to_insert_cpe():
-    listOfFiles = os.listdir(import_path)
+    listOfFiles = os.listdir(import_path + "nist/")
     pattern = "*.json"
     files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
             if entry.startswith("nvdcve") or entry.startswith("capec") or entry.startswith("cwe"):
                 continue
-            files.append(entry)
+            files.append("nist/" + entry)
     replace_files_cypher_script(files)
     return files
 
 
 # Define which Dataset and Cypher files will be imported on CVE Insertion
 def files_to_insert_cve():
-    listOfFiles = os.listdir(import_path)
+    listOfFiles = os.listdir(import_path + "nist/")
     pattern = "*.json"
     files = []
     for entry in listOfFiles:
@@ -143,97 +142,30 @@ def files_to_insert_cve():
 
 # Define which Dataset and Cypher files will be imported on CWE Insertion
 def files_to_insert_cwe():
-    listOfFiles = os.listdir(import_path)
+    listOfFiles = os.listdir(import_path + "mitre_cwe/")
     pattern = "*.json"
     files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
             if entry.startswith("nvdcpe") or entry.startswith("capec") or entry.startswith("nvdcve"):
                 continue
-            files.append(entry)
+            files.append("mitre_cwe/" + entry)
     replace_files_cypher_script(files)
     return files
 
 
 # Define which Dataset and Cypher files will be imported on CAPEC Insertion
 def files_to_insert_capec():
-    listOfFiles = os.listdir(import_path)
+    listOfFiles = os.listdir(import_path + "mitre_capec/")
     pattern = "*.json"
     files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
             if entry.startswith("nvdcpe") or entry.startswith("cwe") or entry.startswith("nvdcve"):
                 continue
-            files.append(entry)
+            files.append("mitre_capec/" + entry)
     replace_files_cypher_script(files)
     return files
-
-
-# Convert XML Files to JSON Files
-def xml_to_json():
-    # parse the import folder for xml files
-    # open the input xml file and read
-    # data in form of python dictionary
-    # using xmltodict module
-    for file in os.listdir(import_path):
-        if file.endswith(".xml"):
-            with open(import_path + f'{file}', encoding="utf8") as xml_file:
-                data_dict = xmltodict.parse(xml_file.read())
-                xml_file.close()
-                # generate the object using json.dumps()
-                # corresponding to json data
-                json_data = json.dumps(data_dict)
-                # Write the json data to output
-                # json file
-                jsonfile = import_path + f'{file}'
-                jsonfile = jsonfile.replace(".xml", ".json")
-                with open(jsonfile, "w") as json_file:
-                    json_file.write(json_data)
-                    json_file.close()
-                os.remove(import_path + f'{file}')
-
-
-# Flatten CWE Dataset File
-def replace_unwanted_string_cwe():
-    listOfFiles = os.listdir(import_path)
-    pattern = "*.json"
-    files = []
-    for entry in listOfFiles:
-        if fnmatch.fnmatch(entry, pattern):
-            if entry.startswith("cwec"):
-                files.append(entry)
-                break
-    file = import_path + files[0]
-    fin = open(file, "rt")
-    flattened_cwe = import_path + "cwe.json"
-    fout = open(flattened_cwe, "wt")
-    for line in fin:
-        fout.write(line.replace('"@', '"'))
-    fin.close()
-    os.remove(file)
-    fout.close()
-
-
-# Flatten CAPEC Dataset File
-def replace_unwanted_string_capec():
-    listOfFiles = os.listdir(import_path)
-    pattern = "*.json"
-    files = []
-    for entry in listOfFiles:
-        if fnmatch.fnmatch(entry, pattern):
-            if entry.startswith("capec"):
-                files.append(entry)
-                break
-    file = import_path + files[0]
-    fin = open(file, "rt")
-    flattened_cwe = import_path + "capec.json"
-    fout = open(flattened_cwe, "wt")
-    for line in fin:
-        fout.write(line.replace('"@', '"').replace('#text', 'text'))
-    fin.close()
-    fout.close()
-    os.remove(file)
-
 
 # Copy Cypher Script files to Import Path
 # Define Dataset Files in them
@@ -250,7 +182,7 @@ def replace_files_cypher_script(files):
     elif current_os == "Windows":
         current_path += "\CypherScripts\\"
 
-    if stringToInsert.startswith("\"nvdcpe"):
+    if stringToInsert.startswith("\"nist/nvdcpe"):
         toUpdate = current_path + "CPEs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CPEs.cypher"
@@ -259,7 +191,7 @@ def replace_files_cypher_script(files):
             fout.write(line.replace('filesToImport', stringToInsert))
         fin.close()
         fout.close()
-    elif stringToInsert.startswith("\"nvdcve"):
+    elif stringToInsert.startswith("\"nist/nvdcve"):
         toUpdate = current_path + "CVEs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CVEs.cypher"
@@ -268,7 +200,7 @@ def replace_files_cypher_script(files):
             fout.write(line.replace('filesToImport', stringToInsert))
         fin.close()
         fout.close()
-    elif stringToInsert.startswith("\"cwe"):
+    elif stringToInsert.startswith("\"mitre_cwe/cwe"):
         toUpdate = current_path + "CWEs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CWEs.cypher"
@@ -277,7 +209,7 @@ def replace_files_cypher_script(files):
             fout.write(line.replace('filesToImport', stringToInsert))
         fin.close()
         fout.close()
-    elif stringToInsert.startswith("\"capec"):
+    elif stringToInsert.startswith("\"mitre_capec/capec"):
         toUpdate = current_path + "CAPECs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CAPECs.cypher"
@@ -303,8 +235,23 @@ def copy_files_cypher_script():
 
 # Clear Import Directory
 def clear_directory():
-    for f in os.listdir(import_path):
-        os.remove(os.path.join(import_path, f))
+    try:
+        # List all files and directories inside the specified directory
+        directory_contents = os.listdir(import_path)
+
+        # Delete each file and subdirectory within the directory
+        for item in directory_contents:
+            item_path = os.path.join(import_path, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+
+        print(f"Contents of '{import_path}' have been deleted.")
+    except FileNotFoundError:
+        print(f"Directory not found: {import_path}")
+    except Exception as e:
+        print(f"Error occurred: {e}")
 
 
 # Set Import Directory
@@ -323,9 +270,7 @@ def run(url_db, username, password, directory, neo4jbrowser, graphlytic):
 
     clear_directory()
     scraper.download_datasets(import_path)
-    xml_to_json()
-    replace_unwanted_string_cwe()
-    replace_unwanted_string_capec()
+
     copy_files_cypher_script()
 
     app = App(url_db, username, password)
