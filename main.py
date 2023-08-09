@@ -7,6 +7,7 @@ import fnmatch
 import platform
 import shutil
 from pathlib import Path
+from fileType import FileType
 
 
 class App:
@@ -61,7 +62,7 @@ class App:
         files = files_to_insert_cpe()
         for f in files:
             print('Inserting ' + f)
-        self.query_cpe_script(files)
+        #self.query_cpe_script(files)
 
     # Cypher Query to insert CVE Cypher Script
     def query_cve_script(self, files):
@@ -77,7 +78,7 @@ class App:
         files = files_to_insert_cve()
         for f in files:
             print('Inserting ' + f)
-        self.query_cve_script(files)
+        #self.query_cve_script(files)
 
     # Cypher Query to insert CWE Cypher Script
     def query_cwe_script(self, files):
@@ -93,7 +94,7 @@ class App:
         files = files_to_insert_cwe()
         for f in files:
             print('Inserting ' + f)
-        self.query_cwe_script(files)
+        #self.query_cwe_script(files)
 
     # Cypher Query to insert CAPEC Cypher Script
     def query_capec_script(self, files):
@@ -109,72 +110,113 @@ class App:
         files = files_to_insert_capec()
         for f in files:
             print('Inserting ' + f)
-        self.query_capec_script(files)
+        #self.query_capec_script(files)
 
 
 # Define which Dataset and Cypher files will be imported on CPE Insertion
 def files_to_insert_cpe():
-    listOfFiles = os.listdir(import_path + "nist/")
+    listOfFiles = os.listdir(import_path + "nist/cpe/splitted/")
     pattern = "*.json"
-    files = []
+    cpe_files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
-            if entry.startswith("nvdcve") or entry.startswith("capec") or entry.startswith("cwe"):
+            if entry.startswith("cpe_output"):
+                cpe_files.append("nist/cpe/splitted/" + entry)
+            else:
                 continue
-            files.append("nist/" + entry)
-    replace_files_cypher_script(files)
-    return files
+    cpes = {
+        'cpeFilesToImport' : cpe_files
+    }
+
+    replace_files_cypher_script(cpes, FileType.CPE)
+    return cpe_files
 
 
 # Define which Dataset and Cypher files will be imported on CVE Insertion
 def files_to_insert_cve():
-    listOfFiles = os.listdir(import_path + "nist/")
+    listOfFiles = os.listdir(import_path + "nist/cve/splitted/")
     pattern = "*.json"
-    files = []
+    cve_files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
-            if entry.startswith("nvdcpe") or entry.startswith("capec") or entry.startswith("cwe"):
+            if entry.startswith("cve_output"):
+                cve_files.append("nist/cve/splitted/" + entry)
+            else:
                 continue
-            files.append(entry)
-    replace_files_cypher_script(files)
-    return files
+    cves = {
+        'cveFilesToImport' : cve_files
+    }
+
+    replace_files_cypher_script(cves, FileType.CVE)
+
+    return cve_files
 
 
 # Define which Dataset and Cypher files will be imported on CWE Insertion
 def files_to_insert_cwe():
-    listOfFiles = os.listdir(import_path + "mitre_cwe/")
+    listOfFiles = os.listdir(import_path + "mitre_cwe/splitted/")
     pattern = "*.json"
-    files = []
+    weakness_files = []
+    category_files = []
+    reference_files = []
+    view_files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
-            if entry.startswith("nvdcpe") or entry.startswith("capec") or entry.startswith("nvdcve"):
+            if entry.startswith("cwe_weakness"):
+                weakness_files.append("mitre_cwe/splitted/" + entry)
+            elif entry.startswith("cwe_category"):
+                category_files.append("mitre_cwe/splitted/" + entry)
+            elif entry.startswith("cwe_reference"):
+                reference_files.append("mitre_cwe/splitted/" + entry)
+            elif entry.startswith("cwe_view"):
+                view_files.append("mitre_cwe/splitted/" + entry)
+            else:
                 continue
-            files.append("mitre_cwe/" + entry)
-    replace_files_cypher_script(files)
-    return files
+
+    cwes = {
+        'cweWeaknessFilesToImport' : weakness_files,
+        'cweCategoryFilesToImport' : category_files,
+        'cweReferenceFilesToImport' : reference_files,
+        'cweViewFilesToImport' : view_files
+    }
+
+    replace_files_cypher_script(cwes, FileType.CWE)
+
+    return weakness_files + category_files + reference_files + view_files
 
 
 # Define which Dataset and Cypher files will be imported on CAPEC Insertion
 def files_to_insert_capec():
-    listOfFiles = os.listdir(import_path + "mitre_capec/")
+    listOfFiles = os.listdir(import_path + "mitre_capec/splitted/")
     pattern = "*.json"
-    files = []
+    attack_pattern_files = []
+    category_files = []
+    reference_files = []
+    view_files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
-            if entry.startswith("nvdcpe") or entry.startswith("cwe") or entry.startswith("nvdcve"):
+            if entry.startswith("capec_attack_pattern"):
+                attack_pattern_files.append("mitre_capec/splitted/" + entry)
+            elif entry.startswith("capec_category"):
+                category_files.append("mitre_capec/splitted/" + entry)
+            elif entry.startswith("capec_reference"):
+                reference_files.append("mitre_capec/splitted/" + entry)
+            elif entry.startswith("capec_view"):
+                view_files.append("mitre_capec/splitted/" + entry)
+            else:
                 continue
-            files.append("mitre_capec/" + entry)
-    replace_files_cypher_script(files)
-    return files
 
-# Copy Cypher Script files to Import Path
-# Define Dataset Files in them
-def replace_files_cypher_script(files):
-    stringToInsert = "\""
-    for file in files:
-        stringToInsert += file + "\", \""
-    stringToInsert = stringToInsert[:-3]
+    capecs = {
+        'capecAttackFilesToImport' : attack_pattern_files,
+        'capecCategoryFilesToImport' : category_files,
+        'capecReferenceFilesToImport' : reference_files,
+        'capecViewFilesToImport' : view_files
+    }
+    replace_files_cypher_script(capecs, FileType.CAPEC)
 
+    return attack_pattern_files + category_files + reference_files + view_files
+
+def replace_files_cypher_script(files_by_type, type):
     current_path = os.getcwd()
     current_os = platform.system()
     if (current_os == "Linux" or current_os == "Darwin"):
@@ -182,43 +224,70 @@ def replace_files_cypher_script(files):
     elif current_os == "Windows":
         current_path += "\CypherScripts\\"
 
-    if stringToInsert.startswith("\"nist/nvdcpe"):
+    if type == FileType.CPE:
         toUpdate = current_path + "CPEs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CPEs.cypher"
         fout = open(updatedFile, "wt")
+
         for line in fin:
-            fout.write(line.replace('filesToImport', stringToInsert))
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
         fin.close()
         fout.close()
-    elif stringToInsert.startswith("\"nist/nvdcve"):
+
+    if type == FileType.CVE:
         toUpdate = current_path + "CVEs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CVEs.cypher"
         fout = open(updatedFile, "wt")
+
         for line in fin:
-            fout.write(line.replace('filesToImport', stringToInsert))
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
         fin.close()
         fout.close()
-    elif stringToInsert.startswith("\"mitre_cwe/cwe"):
-        toUpdate = current_path + "CWEs.cypher"
-        fin = open(toUpdate, "rt")
-        updatedFile = import_path + "CWEs.cypher"
-        fout = open(updatedFile, "wt")
-        for line in fin:
-            fout.write(line.replace('filesToImport', stringToInsert))
-        fin.close()
-        fout.close()
-    elif stringToInsert.startswith("\"mitre_capec/capec"):
+
+    if type == FileType.CAPEC:
         toUpdate = current_path + "CAPECs.cypher"
         fin = open(toUpdate, "rt")
         updatedFile = import_path + "CAPECs.cypher"
         fout = open(updatedFile, "wt")
+
         for line in fin:
-            fout.write(line.replace('filesToImport', stringToInsert))
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+        
+        fin.close()
+        fout.close()
+    
+    if type == FileType.CWE:
+        toUpdate = current_path + "CWEs.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CWEs.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
         fin.close()
         fout.close()
 
+def replace_placeholder_with_value(line, files_by_type):
+    for key in files_by_type.keys():
+        if key in line:
+            return line.replace(key, string_to_insert_from_files(files_by_type[key]))
+    return line
+
+def string_to_insert_from_files(files):
+    stringToInsert = "\""
+    for file in files:
+        stringToInsert += file + "\", \""
+    stringToInsert = stringToInsert[:-3]
+    return stringToInsert
 
 # Copy Cypher Script Schema Files to Import Path
 def copy_files_cypher_script():
@@ -268,8 +337,8 @@ def set_import_path(directory):
 def run(url_db, username, password, directory, neo4jbrowser, graphlytic):
     set_import_path(directory)
 
-    clear_directory()
-    scraper.download_datasets(import_path)
+    #clear_directory()    
+    #scraper.download_datasets(import_path)
 
     copy_files_cypher_script()
 
