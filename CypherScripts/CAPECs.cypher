@@ -13,7 +13,7 @@ CALL apoc.periodic.iterate(
   ',
   {batchSize:200, params: {files:files}}
 ) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
+    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
 
 
 // Insert CAPECs
@@ -50,7 +50,7 @@ CALL apoc.periodic.iterate(
     FOREACH (consequence IN capec.Consequences.Consequence |
       MERGE (con:Consequence {Scope: [value IN consequence.Scope | value]})
       MERGE (cp)-[rel:hasConsequence]->(con)
-      SET rel.Impact = [value IN consequence.Impact | value],
+      ON CREATE SET rel.Impact = [value IN consequence.Impact | value],
       rel.Note = consequence.Note,
       rel.Likelihood = consequence.Likelihood
     )
@@ -65,32 +65,21 @@ CALL apoc.periodic.iterate(
 
     // Related Attack Patterns
     WITH cp, capec
-    UNWIND (
-      CASE capec.Related_Attack_Patterns.Related_Attack_Pattern
-        WHEN [] THEN "-1"
-        ELSE capec.Related_Attack_Patterns.Related_Attack_Pattern
-        END) AS Rel_AP
-    OPTIONAL MATCH (pec:CAPEC {
-      Name: "CAPEC-" + Rel_AP.CAPEC_ID
-    })
-    FOREACH (pec IN CASE WHEN pec <> null THEN [pec] ELSE [] END | MERGE (cp)-[:RelatedAttackPattern {Nature: Rel_AP.Nature}]->(pec))
+    FOREACH (Rel_AP IN capec.Related_Attack_Patterns.Related_Attack_Pattern |
+      MERGE (pec:CAPEC { Name: "CAPEC-" + Rel_AP.CAPEC_ID })
+      MERGE (cp)-[:RelatedAttackPattern {Nature: Rel_AP.Nature}]->(pec)
+    )
 
     // Public References for CAPECs
     WITH cp, capec
-    UNWIND (
-    CASE capec.References.Reference WHEN [] THEN [ null ]
-      ELSE capec.References.Reference
-      END) AS ExReference
-
-    OPTIONAL MATCH (Ref:External_Reference_CAPEC {Reference_ID: ExReference.External_Reference_ID})
-    FOREACH (Ref IN CASE WHEN Ref <> null THEN [Ref] ELSE [] END |
+    FOREACH (ExReference IN capec.References.Reference |
+      MERGE (Ref:External_Reference_CAPEC {Reference_ID: ExReference.External_Reference_ID})
       MERGE (cp)-[rel:hasExternal_Reference {CAPEC_ID: cp.Name}]->(Ref)
-      SET rel.Section = ExReference.Section
     )
   ',
-  {batchSize:200, params: {files:files}}
+  {batchSize:1000, params: {files:files}}
 ) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
+    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
 
 // ------------------------------------------------------------------------
 
@@ -102,44 +91,37 @@ CALL apoc.periodic.iterate(
   'CALL apoc.load.json($files) YIELD value AS category RETURN category',
   '
     MERGE (c:CAPEC {Name: "CAPEC-" + category.ID})
-    SET c.Extended_Name = category.Name, c.Status = category.Status, c.Summary = apoc.convert.toString(category.Summary),
-    c.Notes = apoc.convert.toString(category.Notes), c.Submission_Name = category.Content_History.Submission.
-      Submission_Name,
+    SET c.Extended_Name = category.Name,
+    c.Status = category.Status,
+    c.Summary = apoc.convert.toString(category.Summary),
+    c.Notes = apoc.convert.toString(category.Notes),
+    c.Submission_Name = category.Content_History.Submission.Submission_Name,
     c.Submission_Date = category.Content_History.Submission.Submission_Date,
     c.Submission_Organization = category.Content_History.Submission.Submission_Organization,
     c.Modification = [value IN category.Content_History.Modification | apoc.convert.toString(value)]
 
     // Insert Members for each Category
     WITH c, category
-    UNWIND (
-    CASE category.Relationships.Has_Member WHEN [] THEN [ null ]
-      ELSE category.Relationships.Has_Member
-      END) AS members
-    OPTIONAL MATCH (MemberAP:CAPEC {Name: "CAPEC-" + members.CAPEC_ID})
-    MERGE (c)-[:hasMember]->(MemberAP)
+    FOREACH (members IN category.Relationships.Has_Member |
+      MERGE (MemberAP:CAPEC {Name: "CAPEC-" + members.CAPEC_ID})
+      MERGE (c)-[:hasMember]->(MemberAP)
+    )
 
-    // ------------------------------------------------------------------------
-    // Insert Public References for each Category
     WITH c, category
-    UNWIND (
-    CASE category.References.Reference WHEN [] THEN [ null ]
-      ELSE category.References.Reference
-      END) AS categoryExReference
-    MATCH (c:CAPEC)
-      WHERE c.Name = "CAPEC-" + category.ID
-    OPTIONAL MATCH (catRef:External_Reference_CAPEC {Reference_ID: categoryExReference.External_Reference_ID})
-    MERGE (c)-[rel:hasExternal_Reference]->(catRef)
-    SET rel.Section = categoryExReference.Section
+    FOREACH (categoryExReference IN category.References.Reference |
+      MERGE (catRef:External_Reference_CAPEC {Reference_ID: categoryExReference.External_Reference_ID})
+      MERGE (c)-[rel:hasExternal_Reference]->(catRef)
+      SET rel.Section = categoryExReference.Section
+    )
   ',
   {batchSize:200, params: {files:files}}
 ) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
+    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
 
 // ------------------------------------------------------------------------
 // Insert Views for CAPECs
 
 UNWIND [capecViewFilesToImport] AS files
-
 CALL apoc.periodic.iterate(
   'CALL apoc.load.json($files) YIELD value AS view RETURN view',
   '
@@ -161,25 +143,21 @@ CALL apoc.periodic.iterate(
 
       // Insert Members for each View
       WITH v, view
-      UNWIND (
-      CASE view.Members.Has_Member WHEN [] THEN [ null ]
-        ELSE view.Members.Has_Member
-        END) AS members
-      OPTIONAL MATCH (MemberAP:CAPEC {Name: "CAPEC-" + members.CAPEC_ID})
-      MERGE (v)-[:hasMember]->(MemberAP)
+      FOREACH (members IN view.Members.Has_Member |
+        MERGE (MemberAP:CAPEC {Name: "CAPEC-" + members.CAPEC_ID})
+        MERGE (v)-[:hasMember]->(MemberAP)
+      )
+
 
       // ------------------------------------------------------------------------
       // Insert Public References for each View
       WITH v, view
-      UNWIND (
-      CASE view.References.Reference WHEN [] THEN [ null ]
-        ELSE view.References.Reference
-        END) AS viewExReference
-      MATCH (v:CAPEC_VIEW)
-        WHERE v.ViewID = view.ID
-      OPTIONAL MATCH (viewRef:External_Reference_CAPEC {Reference_ID: viewExReference.External_Reference_ID})
-      MERGE (v)-[:hasExternal_Reference]->(viewRef);
+      FOREACH (viewExReference IN view.References.Reference |
+        MERGE (v:CAPEC_VIEW {ViewID: view.ID})
+        MERGE (viewRef:External_Reference_CAPEC {Reference_ID: viewExReference.External_Reference_ID})
+        MERGE (v)-[:hasExternal_Reference]->(viewRef)
+      )
   ',
   {batchSize:200, params: {files:files}}
 ) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
+    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;

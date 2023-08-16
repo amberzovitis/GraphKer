@@ -23,7 +23,7 @@ class App:
     # Clear Database
     def clear(self):
         # Clear Database from existing nodes and relationships
-        query = """match (n) detach delete (n)"""
+        query = """CALL apoc.periodic.iterate('MATCH (n) RETURN n', 'DETACH DELETE n', {batchSize:2000})"""
         session = self.driver.session()
         session.run(query)
         print("\nPrevious Data have been deleted.")
@@ -34,7 +34,7 @@ class App:
     # Clear Schema
     def clearSchema(self):
         # Clear Database from existing constraints and indexes
-        query = """CALL apoc.cypher.runSchemaFile("ClearConstraintsIndexes.cypher")"""
+        query = """CALL apoc.schema.assert({}, {}, true)"""
         session = self.driver.session()
         session.run(query)
         print("\nPrevious Schema has been deleted.")
@@ -50,9 +50,15 @@ class App:
     # Cypher Query to insert CPE Cypher Script
     def query_cpe_script(self, files):
         # Insert file with CPE Query Script to Database
-        query = """CALL apoc.cypher.runFile("CPEs.cypher")"""
+        #query = """CALL apoc.cypher.runFile("CPEs.cypher")"""
+        cpes_cypher_file = open(import_path + "CPEs.cypher", "r")
+        query = cpes_cypher_file.read()
+
         session = self.driver.session()
-        session.run(query)
+        query_result = session.run(query)
+
+        query_result.consume()
+
         for file in files:
             print("\nCPE Files: " + file + " insertion completed. \n----------")
 
@@ -62,13 +68,18 @@ class App:
         files = files_to_insert_cpe()
         for f in files:
             print('Inserting ' + f)
-        #self.query_cpe_script(files)
+        self.query_cpe_script(files)
 
     # Cypher Query to insert CVE Cypher Script
     def query_cve_script(self, files):
-        query = """CALL apoc.cypher.runFile("CVEs.cypher")"""
+        cves_cypher_file = open(import_path + "CVEs.cypher", "r")
+        query = cves_cypher_file.read()
+
         session = self.driver.session()
-        session.run(query)
+        query_result = session.run(query)
+        query_result.consume()
+
+
         for file in files:
             print("\nCVE Files: " + file + " insertion completed. \n----------")
 
@@ -78,39 +89,153 @@ class App:
         files = files_to_insert_cve()
         for f in files:
             print('Inserting ' + f)
-        #self.query_cve_script(files)
+        self.query_cve_script(files)
 
-    # Cypher Query to insert CWE Cypher Script
-    def query_cwe_script(self, files):
-        query = """CALL apoc.cypher.runFile("CWEs.cypher")"""
+    # Cypher Query to insert CWE reference Cypher Script
+    def query_cwe_reference_script(self, files):
+        cwes_cypher_file = open(import_path + "CWEs_reference.cypher", "r")
+        query = cwes_cypher_file.read()
+
         session = self.driver.session()
-        session.run(query)
+        query_result = session.run(query)
+        query_result.consume()
+
+        for file in files:
+            print("\nCWE Files: " + file + " insertion completed. \n----------")
+
+    # Cypher Query to insert CWE weakness Cypher Script
+    def query_cwe_weakness_script(self, files):
+        cwes_cypher_file = open(import_path + "CWEs_weakness.cypher", "r")
+        query = cwes_cypher_file.read()
+
+        session = self.driver.session()
+        query_result = session.run(query)
+        query_result.consume()
+
+        for file in files:
+            print("\nCWE Files: " + file + " insertion completed. \n----------")
+
+    # Cypher Query to insert CWE category Cypher Script
+    def query_cwe_category_script(self, files):
+        cwes_cypher_file = open(import_path + "CWEs_category.cypher", "r")
+        query = cwes_cypher_file.read()
+
+        session = self.driver.session()
+        query_result = session.run(query)
+        query_result.consume()
+
+        for file in files:
+            print("\nCWE Files: " + file + " insertion completed. \n----------")
+
+    # Cypher Query to insert CWE view Cypher Script
+    def query_cwe_view_script(self, files):
+        cwes_cypher_file = open(import_path + "CWEs_view.cypher", "r")
+        query = cwes_cypher_file.read()
+
+        session = self.driver.session()
+        query_result = session.run(query)
+        query_result.consume()
+
         for file in files:
             print("\nCWE Files: " + file + " insertion completed. \n----------")
 
     # Configure CWE Files and CWE Cypher Script for insertion
     def cwe_insertion(self):
         print("\nInserting CWE Files to Database...")
-        files = files_to_insert_cwe()
+        files = files_to_insert_cwe_reference()
         for f in files:
             print('Inserting ' + f)
-        #self.query_cwe_script(files)
+        self.query_cwe_reference_script(files)
 
-    # Cypher Query to insert CAPEC Cypher Script
-    def query_capec_script(self, files):
-        query = """CALL apoc.cypher.runFile("CAPECs.cypher")"""
+        files = files_to_insert_cwe_weakness()
+        for f in files:
+            print('Inserting ' + f)
+        self.query_cwe_weakness_script(files)
+
+        files = files_to_insert_cwe_category()
+        for f in files:
+            print('Inserting ' + f)
+        self.query_cwe_category_script(files)
+
+        files = files_to_insert_cwe_view()
+        for f in files:
+            print('Inserting ' + f)
+        self.query_cwe_view_script(files)
+
+    # Cypher Query to insert CAPEC refrence Cypher Script
+    def query_capec_reference_script(self, files):
+        #query = """CALL apoc.cypher.runFile("CAPECs.cypher")"""
+        capecs_cypher_file = open(import_path + "CAPECs_reference.cypher", "r")
+        query = capecs_cypher_file.read()
+
         session = self.driver.session()
-        session.run(query)
+        query_result = session.run(query)
+        query_result.consume()
+
+        for file in files:
+            print("\nCAPEC Files: " + file + " insertion completed. \n----------")
+
+    # Cypher Query to insert CAPEC attack Cypher Script
+    def query_capec_attack_script(self, files):
+        #query = """CALL apoc.cypher.runFile("CAPECs.cypher")"""
+        capecs_cypher_file = open(import_path + "CAPECs_attack.cypher", "r")
+        query = capecs_cypher_file.read()
+
+        session = self.driver.session()
+        query_result = session.run(query)
+        query_result.consume()
+
+        for file in files:
+            print("\nCAPEC Files: " + file + " insertion completed. \n----------")
+
+    # Cypher Query to insert CAPEC category Cypher Script
+    def query_capec_category_script(self, files):
+        #query = """CALL apoc.cypher.runFile("CAPECs.cypher")"""
+        capecs_cypher_file = open(import_path + "CAPECs_category.cypher", "r")
+        query = capecs_cypher_file.read()
+
+        session = self.driver.session()
+        query_result = session.run(query)
+        query_result.consume()
+
+        for file in files:
+            print("\nCAPEC Files: " + file + " insertion completed. \n----------")
+
+    # Cypher Query to insert CAPEC view Cypher Script
+    def query_capec_view_script(self, files):
+        #query = """CALL apoc.cypher.runFile("CAPECs.cypher")"""
+        capecs_cypher_file = open(import_path + "CAPECs_view.cypher", "r")
+        query = capecs_cypher_file.read()
+
+        session = self.driver.session()
+        query_result = session.run(query)
+        query_result.consume()
+
         for file in files:
             print("\nCAPEC Files: " + file + " insertion completed. \n----------")
 
     # Configure CAPEC Files and CAPEC Cypher Script for insertion
     def capec_insertion(self):
         print("\nInserting CAPEC Files to Database...")
-        files = files_to_insert_capec()
+        files = files_to_insert_capec_reference()
         for f in files:
             print('Inserting ' + f)
-        #self.query_capec_script(files)
+        self.query_capec_reference_script(files)
+
+        files = files_to_insert_capec_attack()
+        for f in files:
+            print('Inserting ' + f)
+        self.query_capec_attack_script(files)
+
+        files = files_to_insert_capec_category()
+        for f in files:
+            print('Inserting ' + f)
+        self.query_capec_category_script(files)
+
+        files = files_to_insert_capec_view()
+        for f in files:
+            print('Inserting ' + f)
+        self.query_capec_view_script(files)
 
 
 # Define which Dataset and Cypher files will be imported on CPE Insertion
@@ -152,69 +277,165 @@ def files_to_insert_cve():
     return cve_files
 
 
-# Define which Dataset and Cypher files will be imported on CWE Insertion
-def files_to_insert_cwe():
+# Define which Dataset and Cypher files will be imported on CWE reference Insertion
+def files_to_insert_cwe_reference():
+    listOfFiles = os.listdir(import_path + "mitre_cwe/splitted/")
+    pattern = "*.json"
+
+    reference_files = []
+
+    for entry in listOfFiles:
+        if fnmatch.fnmatch(entry, pattern):
+            if entry.startswith("cwe_reference"):
+                reference_files.append("mitre_cwe/splitted/" + entry)
+            else:
+                continue
+
+    cwes = {
+        'cweReferenceFilesToImport' : reference_files
+    }
+
+    replace_files_cypher_script(cwes, FileType.CWE_REFERENCE)
+
+    return reference_files
+
+# Define which Dataset and Cypher files will be imported on CWE weakness Insertion
+def files_to_insert_cwe_weakness():
     listOfFiles = os.listdir(import_path + "mitre_cwe/splitted/")
     pattern = "*.json"
     weakness_files = []
-    category_files = []
-    reference_files = []
-    view_files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
             if entry.startswith("cwe_weakness"):
                 weakness_files.append("mitre_cwe/splitted/" + entry)
-            elif entry.startswith("cwe_category"):
-                category_files.append("mitre_cwe/splitted/" + entry)
-            elif entry.startswith("cwe_reference"):
-                reference_files.append("mitre_cwe/splitted/" + entry)
-            elif entry.startswith("cwe_view"):
-                view_files.append("mitre_cwe/splitted/" + entry)
             else:
                 continue
 
     cwes = {
         'cweWeaknessFilesToImport' : weakness_files,
-        'cweCategoryFilesToImport' : category_files,
-        'cweReferenceFilesToImport' : reference_files,
+    }
+
+    replace_files_cypher_script(cwes, FileType.CWE_WEAKNESS)
+
+    return weakness_files
+
+
+# Define which Dataset and Cypher files will be imported on CWE category Insertion
+def files_to_insert_cwe_category():
+    listOfFiles = os.listdir(import_path + "mitre_cwe/splitted/")
+    pattern = "*.json"
+    category_files = []
+    for entry in listOfFiles:
+        if fnmatch.fnmatch(entry, pattern):
+            if entry.startswith("cwe_category"):
+                category_files.append("mitre_cwe/splitted/" + entry)
+            else:
+                continue
+
+    cwes = {
+        'cweCategoryFilesToImport' : category_files
+    }
+
+    replace_files_cypher_script(cwes, FileType.CWE_CATEGORY)
+
+    return category_files
+
+
+# Define which Dataset and Cypher files will be imported on CWE view Insertion
+def files_to_insert_cwe_view():
+    listOfFiles = os.listdir(import_path + "mitre_cwe/splitted/")
+    pattern = "*.json"
+    view_files = []
+    for entry in listOfFiles:
+        if fnmatch.fnmatch(entry, pattern):
+            if entry.startswith("cwe_view"):
+                view_files.append("mitre_cwe/splitted/" + entry)
+            else:
+                continue
+
+    cwes = {
         'cweViewFilesToImport' : view_files
     }
 
-    replace_files_cypher_script(cwes, FileType.CWE)
+    replace_files_cypher_script(cwes, FileType.CWE_VIEW)
 
-    return weakness_files + category_files + reference_files + view_files
+    return view_files
 
+# Define which Dataset and Cypher files will be imported on CAPEC refrence Insertion
+def files_to_insert_capec_reference():
+    listOfFiles = os.listdir(import_path + "mitre_capec/splitted/")
+    pattern = "*.json"
+    reference_files = []
+    for entry in listOfFiles:
+        if fnmatch.fnmatch(entry, pattern):
+            if entry.startswith("capec_reference"):
+                reference_files.append("mitre_capec/splitted/" + entry)
+            else:
+                continue
 
-# Define which Dataset and Cypher files will be imported on CAPEC Insertion
-def files_to_insert_capec():
+    capecs = {
+        'capecReferenceFilesToImport' : reference_files
+    }
+    replace_files_cypher_script(capecs, FileType.CAPEC_REFERENCE)
+
+    return reference_files
+
+# Define which Dataset and Cypher files will be imported on CAPEC attack Insertion
+def files_to_insert_capec_attack():
     listOfFiles = os.listdir(import_path + "mitre_capec/splitted/")
     pattern = "*.json"
     attack_pattern_files = []
-    category_files = []
-    reference_files = []
-    view_files = []
     for entry in listOfFiles:
         if fnmatch.fnmatch(entry, pattern):
             if entry.startswith("capec_attack_pattern"):
                 attack_pattern_files.append("mitre_capec/splitted/" + entry)
-            elif entry.startswith("capec_category"):
+            else:
+                continue
+
+    capecs = {
+        'capecAttackFilesToImport' : attack_pattern_files
+    }
+    replace_files_cypher_script(capecs, FileType.CAPEC_ATTACK)
+
+    return attack_pattern_files
+
+# Define which Dataset and Cypher files will be imported on CAPEC category Insertion
+def files_to_insert_capec_category():
+    listOfFiles = os.listdir(import_path + "mitre_capec/splitted/")
+    pattern = "*.json"
+    category_files = []
+    for entry in listOfFiles:
+        if fnmatch.fnmatch(entry, pattern):
+            if entry.startswith("capec_category"):
                 category_files.append("mitre_capec/splitted/" + entry)
-            elif entry.startswith("capec_reference"):
-                reference_files.append("mitre_capec/splitted/" + entry)
-            elif entry.startswith("capec_view"):
+            else:
+                continue
+
+    capecs = {
+        'capecCategoryFilesToImport' : category_files
+    }
+    replace_files_cypher_script(capecs, FileType.CAPEC_CATEGORY)
+
+    return category_files
+
+# Define which Dataset and Cypher files will be imported on CAPEC view Insertion
+def files_to_insert_capec_view():
+    listOfFiles = os.listdir(import_path + "mitre_capec/splitted/")
+    pattern = "*.json"
+    view_files = []
+    for entry in listOfFiles:
+        if fnmatch.fnmatch(entry, pattern):
+            if entry.startswith("capec_view"):
                 view_files.append("mitre_capec/splitted/" + entry)
             else:
                 continue
 
     capecs = {
-        'capecAttackFilesToImport' : attack_pattern_files,
-        'capecCategoryFilesToImport' : category_files,
-        'capecReferenceFilesToImport' : reference_files,
         'capecViewFilesToImport' : view_files
     }
-    replace_files_cypher_script(capecs, FileType.CAPEC)
+    replace_files_cypher_script(capecs, FileType.CAPEC_VIEW)
 
-    return attack_pattern_files + category_files + reference_files + view_files
+    return view_files
 
 def replace_files_cypher_script(files_by_type, type):
     current_path = os.getcwd()
@@ -250,10 +471,49 @@ def replace_files_cypher_script(files_by_type, type):
         fin.close()
         fout.close()
 
-    if type == FileType.CAPEC:
-        toUpdate = current_path + "CAPECs.cypher"
+    if type == FileType.CAPEC_REFERENCE:
+        toUpdate = current_path + "CAPECs_reference.cypher"
         fin = open(toUpdate, "rt")
-        updatedFile = import_path + "CAPECs.cypher"
+        updatedFile = import_path + "CAPECs_reference.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
+        fin.close()
+        fout.close()
+
+    if type == FileType.CAPEC_ATTACK:
+        toUpdate = current_path + "CAPECs_attack.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CAPECs_attack.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
+        fin.close()
+        fout.close()
+
+    if type == FileType.CAPEC_CATEGORY:
+        toUpdate = current_path + "CAPECs_category.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CAPECs_category.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
+        fin.close()
+        fout.close()
+
+    if type == FileType.CAPEC_VIEW:
+        toUpdate = current_path + "CAPECs_view.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CAPECs_view.cypher"
         fout = open(updatedFile, "wt")
 
         for line in fin:
@@ -263,10 +523,49 @@ def replace_files_cypher_script(files_by_type, type):
         fin.close()
         fout.close()
     
-    if type == FileType.CWE:
-        toUpdate = current_path + "CWEs.cypher"
+    if type == FileType.CWE_REFERENCE:
+        toUpdate = current_path + "CWEs_reference.cypher"
         fin = open(toUpdate, "rt")
-        updatedFile = import_path + "CWEs.cypher"
+        updatedFile = import_path + "CWEs_reference.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
+        fin.close()
+        fout.close()
+
+    if type == FileType.CWE_WEAKNESS:
+        toUpdate = current_path + "CWEs_weakness.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CWEs_weakness.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
+        fin.close()
+        fout.close()
+
+    if type == FileType.CWE_CATEGORY:
+        toUpdate = current_path + "CWEs_category.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CWEs_category.cypher"
+        fout = open(updatedFile, "wt")
+
+        for line in fin:
+            line_to_insert = replace_placeholder_with_value(line, files_by_type)
+            fout.write(line_to_insert)
+
+        fin.close()
+        fout.close()
+
+    if type == FileType.CWE_VIEW:
+        toUpdate = current_path + "CWEs_view.cypher"
+        fin = open(toUpdate, "rt")
+        updatedFile = import_path + "CWEs_view.cypher"
         fout = open(updatedFile, "wt")
 
         for line in fin:
@@ -335,24 +634,26 @@ def set_import_path(directory):
 
 # Define the functions that will be running
 def run(url_db, username, password, directory, neo4jbrowser, graphlytic):
-    set_import_path(directory)
+    try:
 
-    #clear_directory()    
-    #scraper.download_datasets(import_path)
+        set_import_path(directory)
 
-    copy_files_cypher_script()
+        clear_directory()
+        scraper.download_datasets(import_path)
 
-    app = App(url_db, username, password)
-    app.clear()
-    app.close()
+        copy_files_cypher_script()
 
-    app = App(url_db, username, password)
-    app.schema_script()
-    app.cve_insertion()
-    app.cwe_insertion()
-    app.capec_insertion()
-    app.cpe_insertion()
-    app.close()
+        app = App(url_db, username, password)
+        app.clear()
+        app.schema_script()
+        app.cpe_insertion()
+        app.capec_insertion()
+        app.cve_insertion()
+        app.cwe_insertion()
+        app.close()
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        app.close()
 
     if neo4jbrowser:
         webbrowser.open("http://localhost:7474")

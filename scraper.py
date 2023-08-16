@@ -7,8 +7,7 @@ from circuitbreaker import circuit
 import json
 import xmltodict
 import fnmatch
-import subprocess
-import math
+
 
 MAX_RETRIES = 5
 
@@ -37,7 +36,7 @@ def download_files_cve(import_path):
         unzip_files_to_directory(download_folder, extract_dir, zip_file_name)
 
     transform_xml_files_to_json(extract_dir)
-    transform_json_big_files_to_multiline_json(extract_dir, '.CVE_Items', 'cve')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'cve','CVE_Items')
 
 def download_files_cpe(import_path):
     url = 'https://nvd.nist.gov/vuln/data-feeds'
@@ -53,7 +52,7 @@ def download_files_cpe(import_path):
     ]
     download_folder = import_path + "nist/cpe/"
     extract_dir = import_path + "nist/cpe/"
-
+#
     # Download and Unzip the files
     print('\nUpdating the Database with the latest CVE Files...')
     for zip_file in zip_files:
@@ -62,9 +61,9 @@ def download_files_cpe(import_path):
         # 5 attempts to download and unzip the file correctly
         download_file_to_path(full_url, download_folder, zip_file_name)
         unzip_files_to_directory(download_folder, extract_dir, zip_file_name)
-
+#
     transform_xml_files_to_json(extract_dir)
-    transform_json_big_files_to_multiline_json(extract_dir, '.matches', 'cpe')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'cpe','matches')
 
 def download_files_cwe(import_path):
     url = 'https://cwe.mitre.org/data/archive.html'
@@ -92,10 +91,10 @@ def download_files_cwe(import_path):
     unzip_files_to_directory(download_folder, extract_dir, zip_file_name)
     transform_xml_files_to_json(extract_dir)
     replace_unwanted_string_cwe(extract_dir)
-    transform_json_big_files_to_multiline_json(extract_dir, '.Weakness_Catalog.External_References.External_Reference', 'cwe_reference')
-    transform_json_big_files_to_multiline_json(extract_dir, '.Weakness_Catalog.Weaknesses.Weakness', 'cwe_weakness')
-    transform_json_big_files_to_multiline_json(extract_dir, '.Weakness_Catalog.Categories.Category', 'cwe_category')
-    transform_json_big_files_to_multiline_json(extract_dir, '.Weakness_Catalog.Views.View', 'cwe_view')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'cwe_reference','Weakness_Catalog.External_References.External_Reference')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'cwe_weakness','Weakness_Catalog.Weaknesses.Weakness')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'cwe_category','Weakness_Catalog.Categories.Category')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'cwe_view','Weakness_Catalog.Views.View')
 
 def download_files_capec(import_path):
     url = 'https://capec.mitre.org/data/archive.html'
@@ -122,10 +121,10 @@ def download_files_capec(import_path):
     download_file_to_path(full_url, download_folder, zip_file_name)
     transform_xml_files_to_json(download_folder)
     replace_unwanted_string_capec(download_folder)
-    transform_json_big_files_to_multiline_json(extract_dir, '.Attack_Pattern_Catalog.External_References.External_Reference', 'capec_reference')
-    transform_json_big_files_to_multiline_json(extract_dir, '.Attack_Pattern_Catalog.Attack_Patterns.Attack_Pattern', 'capec_attack_pattern')
-    transform_json_big_files_to_multiline_json(extract_dir, '.Attack_Pattern_Catalog.Categories.Category', 'capec_category')
-    transform_json_big_files_to_multiline_json(extract_dir, '.Attack_Pattern_Catalog.Views.View', 'capec_view')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'capec_reference','Attack_Pattern_Catalog.External_References.External_Reference')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'capec_attack_pattern','Attack_Pattern_Catalog.Attack_Patterns.Attack_Pattern')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'capec_category','Attack_Pattern_Catalog.Categories.Category')
+    transform_big_json_files_to_multiple_json_files(extract_dir, 'capec_view','Attack_Pattern_Catalog.Views.View')
 
 
 def download_datasets(import_path):
@@ -189,6 +188,14 @@ def transform_xml_files_to_json(path):
         if item_path.endswith(".xml") and os.path.isfile(item_path):
             xml_file_to_json(item_path)
             os.remove(item_path)
+
+def transform_big_json_files_to_multiple_json_files(path, output_prefix, json_array_path):
+    directory_contents = os.listdir(path)
+
+    for item in directory_contents:
+        item_path = os.path.join(path, item)
+        if item_path.endswith(".json") and os.path.isfile(item_path):
+            slice_json_file(item_path, path, output_prefix, 200, json_array_path)
 
 
 # Convert XML Files to JSON Files
@@ -255,54 +262,30 @@ def replace_unwanted_string_capec(path):
     fout.close()
     os.remove(file)
 
-def transform_json_big_files_to_multiline_json(path, jq_filter, file_type):
-    directory_contents = os.listdir(path)
-    batch_size=1000
+def slice_json_file(input_file, output_path, output_prefix, batch_size, json_array_path):
+    with open(input_file, 'r') as f:
+        data = json.load(f)
 
-    if not os.path.exists(os.path.join(path, "splitted")):
-        os.makedirs(os.path.join(path, "splitted"), exist_ok=True)
-    for item in directory_contents:
-        item_path = os.path.join(path, item)
-        if item_path.endswith(".json") and os.path.isfile(item_path):
-            #with open(item_path, 'r', encoding='utf-8') as file:
-                #content = file.read()
-                #print(content)
-                # Run jq on the JSON data
-            result = run_jq(item_path, f'{jq_filter} | length')
-            if result:
-                total_elements = int(result)
-                num_files=(( (total_elements + batch_size - 1) / batch_size ))
-            else:
-                num_files = 0
-                #file.close()
-            print("Result is: ", num_files)
-            for i in range(math.ceil(num_files)):
-                start = i * batch_size
-                end = min(start + batch_size, total_elements)
+    data_array = select_nested_array_by_path(data, json_array_path)
+    length = len(data_array)
 
-                # Extract a batch of elements using jq
-                batch_filter = f'{jq_filter}[{start}:{end}]'
-                batch_data = run_jq(item_path, batch_filter)
-                if batch_data:
-                    print("Writing data code: ")
-                    # Save the batch data to a new file
-                    output_file = os.path.join(path, f"splitted/{file_type}_output_file_{i}.json")
-                    with open(output_file, 'w') as outfile:
-                        outfile.write(batch_data)
+    if not os.path.exists(os.path.join(output_path, "splitted")):
+        os.makedirs(os.path.join(output_path, "splitted"), exist_ok=True)
 
-def run_jq(json_data, jq_filter):
-    try:
-        jq_command = f'jq -r {jq_filter} {json_data}'
-        print("Executing command:", jq_command)
+    for i in range(0, length, batch_size):
+        batch = data_array[i:i+batch_size]
+        output_file = f"{output_path}/splitted/{output_prefix}_output_file_{i//batch_size + 1}.json"
+        with open(output_file, 'w') as f_out:
+            json.dump(batch, f_out, indent=4)
 
-        # Run jq command and capture the output
-        process = subprocess.run(['jq', '-r', jq_filter, json_data], capture_output=True, text=True, check=True)
-        if process.returncode == 0:
-            return process.stdout.strip()
+def select_nested_array_by_path(json_data, path):
+    parsed_json = json_data
+    keys = path.split('.')
+
+    for key in keys:
+        if key in parsed_json:
+            parsed_json = parsed_json[key]
         else:
-            print("==============>")
-            raise RuntimeError(f"Error running jq command: {process.stderr.strip()}")
-    except FileNotFoundError:
-        raise RuntimeError("jq command not found. Make sure jq is installed on your system.")
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error running jq command. Make sure jq is installed and check your JSON and filter. Error: {e}")
+            return None
+
+    return parsed_json

@@ -1,20 +1,3 @@
-// Insert CWEs Catalog - Cypher Script
-
-UNWIND [cweReferenceFilesToImport] AS files
-CALL apoc.periodic.iterate(
-  'CALL apoc.load.json($files) YIELD value AS reference RETURN reference',
-  '
-    // Insert External References for CWEs
-    MERGE (r:External_Reference_CWE {Reference_ID: reference.Reference_ID})
-      ON CREATE SET r.Author = [value IN reference.Author | value],
-      r.Title = reference.Title,
-      r.Edition = reference.Edition, r.URL = reference.URL,
-      r.Publication_Year = reference.Publication_Year, r.Publisher = reference.Publisher
-  ',
-  {batchSize:200, params: {files:files}}
-) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
-
 // ------------------------------------------------------------------------
 // Insert Weaknesses for CWEs
 UNWIND [cweWeaknessFilesToImport] AS files
@@ -130,7 +113,7 @@ CALL apoc.periodic.iterate(
       MERGE (m:Mitigation {Description: apoc.convert.toString(mit.Description)})
       SET m.Phase = [value IN mit.Phase | value],
         m.Strategy = mit.Strategy,
-        m.Effectiveness = mit.Effectiveness,
+        m.Effectiveness = mit.Effectiveness, 
         m.Effectiveness_Notes = CASE apoc.meta.type(mit.Effectiveness_Notes)
           WHEN "STRING"  THEN apoc.convert.toString(mit.Effectiveness_Notes)
           WHEN "MAP" THEN apoc.convert.toString(mit.Effectiveness_Notes.`xhtml:p`)
@@ -154,88 +137,6 @@ CALL apoc.periodic.iterate(
     FOREACH (exReference IN weakness.References.Reference |
       MERGE (ref:External_Reference_CWE {Reference_ID: exReference.External_Reference_ID})
       MERGE (w)-[:hasExternal_Reference]->(ref)
-    )
-  ',
-  {batchSize:200, params: {files:files}}
-) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
-
-
-// ------------------------------------------------------------------------
-// Insert Categories for CWEs
-UNWIND [cweCategoryFilesToImport] AS files
-CALL apoc.periodic.iterate(
-  'CALL apoc.load.json($files) YIELD value AS category RETURN category',
-  '
-    MERGE (c:CWE {
-      Name: "CWE-" + category.ID
-    })
-    SET c.Extended_Name = category.Name,
-    c.Status = category.Status,
-    c.Summary = apoc.convert.toString(category.Summary),
-    c.Notes = apoc.convert.toString(category.Notes),
-    c.Submission_Name = category.Content_History.Submission.Submission_Name,
-    c.Submission_Date = category.Content_History.Submission.Submission_Date,
-    c.Submission_Organization = category.Content_History.Submission.Submission_Organization,
-    c.Modification = [value IN category.Content_History.Modification | apoc.convert.toString(value)]
-
-    // Insert Members for each Category
-    WITH c, category
-    FOREACH (member IN category.Relationships.Has_Member |
-      MERGE (MemberWeak:CWE {Name: "CWE-" + member.CWE_ID})
-      MERGE (c)-[:hasMember {ViewID: member.View_ID}]->(MemberWeak)
-    )
-
-    // ------------------------------------------------------------------------
-    // Insert Public References for each Category
-    WITH c, category
-    FOREACH (categoryExReference IN category.References.Reference |
-      MERGE (catRef:External_Reference_CWE {Reference_ID: categoryExReference.External_Reference_ID})
-      MERGE (c)-[:hasExternal_Reference]->(catRef)
-    )
-  ',
-  {batchSize:200, params: {files:files}}
-) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
-
-// ------------------------------------------------------------------------
-// Insert Views for CWEs
-UNWIND [cweViewFilesToImport] AS files
-CALL apoc.periodic.iterate(
-  'CALL apoc.load.json($files) YIELD value AS view RETURN view',
-  '
-    MERGE (v:CWE_VIEW {ViewID: view.ID})
-    SET v.Name = view.Name,
-    v.Type = view.Type,
-    v.Status = view.Status,
-    v.Objective = apoc.convert.toString(view.Objective),
-    v.Filter = view.Filter,
-    v.Notes = apoc.convert.toString(view.Notes),
-    v.Submission_Name = view.Content_History.Submission.Submission_Name,
-    v.Submission_Date = view.Content_History.Submission.Submission_Date,
-    v.Submission_Organization = view.Content_History.Submission.Submission_Organization,
-    v.Modification = [value IN view.Content_History.Modification | apoc.convert.toString(value)]
-
-    // Insert Stakeholders for each View
-    FOREACH (value IN view.Audience.Stakeholder |
-      MERGE (st:Stakeholder {Type: value.Type})
-      MERGE (v)-[rel:usefulFor]->(st)
-      SET rel.Description = value.Description
-    )
-
-    // Insert Members for each View
-    WITH v, view
-    FOREACH (member IN view.Members.Has_Member |
-      MERGE (MemberWeak:CWE {Name: "CWE-" + member.CWE_ID})
-      MERGE (v)-[:hasMember]->(MemberWeak)
-    )
-
-    // ------------------------------------------------------------------------
-    // Insert Public References for each View
-    WITH v, view
-    FOREACH (viewExReference IN view.References.Reference |
-      MERGE (viewRef:External_Reference_CWE {Reference_ID: viewExReference.External_Reference_ID})
-      MERGE (v)-[:hasExternal_Reference]->(viewRef)
     )
   ',
   {batchSize:200, params: {files:files}}

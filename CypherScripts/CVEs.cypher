@@ -1,6 +1,5 @@
 // Insert CVEs - Cypher Script
 UNWIND [cveFilesToImport] AS files
-
 CALL apoc.periodic.iterate(
         'CALL apoc.load.json($files) YIELD value AS item RETURN item',
         '
@@ -88,4 +87,4 @@ CALL apoc.periodic.iterate(
         ',
         {batchSize:200, params: {files: files}}
     ) YIELD batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
-    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics
+    RETURN batches,total,timeTaken,committedOperations,failedOperations,failedBatches,retries,errorMessages,batch,operations,wasTerminated,failedParams,updateStatistics;
