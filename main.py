@@ -8,6 +8,7 @@ import platform
 import shutil
 from pathlib import Path
 from fileType import FileType
+import time
 
 
 class App:
@@ -635,6 +636,7 @@ def set_import_path(directory):
 # Define the functions that will be running
 def run(url_db, username, password, directory, neo4jbrowser, graphlytic):
     try:
+        start_time = time.time()
 
         set_import_path(directory)
 
@@ -651,6 +653,12 @@ def run(url_db, username, password, directory, neo4jbrowser, graphlytic):
         app.cve_insertion()
         app.cwe_insertion()
         app.close()
+
+        end_time = time.time()
+
+        execution_time = end_time - start_time
+        print(f"Import finished in: {execution_time:.6f} seconds")
+
     except Exception as e:
         print(f"Error occurred: {e}")
         app.close()
