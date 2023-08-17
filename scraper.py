@@ -6,7 +6,9 @@ import platform
 from circuitbreaker import circuit
 import json
 import xmltodict
+import xml.etree.ElementTree as ET
 import fnmatch
+import subprocess
 
 
 MAX_RETRIES = 5
@@ -119,6 +121,9 @@ def download_files_capec(import_path):
     zip_file_name = os.path.basename(xml_file)
 
     download_file_to_path(full_url, download_folder, zip_file_name)
+    current_os = platform.system()
+    if (current_os == "Linux" or current_os == "Darwin"):
+        run_dos2unix(os.path.join(download_folder, zip_file_name))
     transform_xml_files_to_json(download_folder)
     replace_unwanted_string_capec(download_folder)
     transform_big_json_files_to_multiple_json_files(extract_dir, 'capec_reference','Attack_Pattern_Catalog.External_References.External_Reference')
@@ -204,6 +209,7 @@ def xml_file_to_json(xmlFile):
     # open the input xml file and read
     # data in form of python dictionary
     # using xmltodict module
+    print(f"Transforming file {xmlFile}")
     if xmlFile.endswith(".xml"):
         with open(xmlFile, 'r', encoding='utf-8') as xml_file:
             data_dict = xmltodict.parse(xml_file.read())
@@ -289,3 +295,18 @@ def select_nested_array_by_path(json_data, path):
             return None
 
     return parsed_json
+
+def run_dos2unix(file):
+    try:
+        dos2unix_command = f'dos2unix {file}'
+        print("Executing command:", dos2unix_command)
+
+        process = subprocess.run(['dos2unix', file], capture_output=True, text=True, check=True)
+        if process.returncode == 0:
+            print(f"File {file} transformed to unix format")
+        else:
+            raise RuntimeError(f"Error running dos2unix command: {process.stderr.strip()}")
+    except FileNotFoundError:
+        raise RuntimeError("dos2unix command not found. Make sure jq is installed on your system.")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Error running dos2unix command. Make sure dos2unix is installed and check your file. Error: {e}")
