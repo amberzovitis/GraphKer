@@ -8,6 +8,10 @@ Open Source Tool - Cybersecurity Graph Database in Neo4j
 
 With GraphKer you can have the most recent update of cyber-security vulnerabilities, weaknesses, attack patterns and platforms from MITRE and NIST, in an very useful and user friendly way provided by Neo4j graph databases!
 
+# **Data model**
+
+![GraphKer.svg](GraphKer.svg)
+
 # **Prerequisites**
 
 _3 + 1 Steps to run GraphKer Tool_
@@ -84,11 +88,11 @@ _3 + 1 Steps to run GraphKer Tool_
      - Configure Memory Usage:
        
        In Neo4j Configuration File (neo4j.conf):
-       For 16GB RAM you can use 8G + 4G for heap. For 8GB RAM you can use 4G + 2G etc.
+       You can run GraphKer with only 1G of Heap and 512M of pagecache
        ```
-       dbms.memory.heap.initial_size=4G
-       dbms.memory.heap.max_size=8G
-       dbms.memory.pagecache.size=4G
+       dbms.memory.heap.initial_size=512M
+       dbms.memory.heap.max_size=1G
+       dbms.memory.pagecache.size=512M
        ```
        
 ### **3) Install requirements.txt**
